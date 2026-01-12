@@ -9,5 +9,5 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {
-    console.log(`Birthday Surprise running at http://localhost:${PORT} ...`);
+    console.log(`Running at http://localhost:${PORT}`);
 });
