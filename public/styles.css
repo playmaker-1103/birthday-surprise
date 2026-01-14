@@ -111,6 +111,15 @@ body{
 .btn:active{transform:translateY(0px) scale(0.99);}
 .btn.primary{background:rgba(255,255,255,0.16);}
 
+/* Hint "im lặng": không chữ, chỉ pulse nhẹ */
+.btn.hint{
+    animation: hintPulse 1.4s ease-in-out infinite;
+}
+@keyframes hintPulse{
+    0%,100% { box-shadow: none; }
+    50% { box-shadow: 0 0 0 2px rgba(255,255,255,0.18); }
+}
+
 .note{
     padding:12px;
     border-radius:14px;
@@ -139,20 +148,6 @@ body{
     border-radius:14px;
     border:1px solid var(--stroke);
     object-fit:cover;
-}
-
-.pillRow{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-}
-.pill{
-    border:1px solid var(--stroke);
-    background:rgba(255,255,255,0.06);
-    color:rgba(255,255,255,0.70);
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
 }
 
 .cinema{

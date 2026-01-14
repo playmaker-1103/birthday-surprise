@@ -12,15 +12,15 @@ const fx = document.getElementById("fx");
 const ctx = fx.getContext("2d");
 
 // ====== TÙY BIẾN ======
-const personName = "Bạn"; // đổi tên người nhận ở đây
+const personName = "Như Ý aka Yvonne"; // đổi tên người nhận ở đây
 const ASSETS = {
     photos: ["assets/photo1.jpg", "assets/photo2.jpg"],
     video: "assets/video.mp4"
 };
 
 // ====== STATE ======
-let stepIndex = -1;      // -1: intro
-let layerIndex = 0;      // lớp trong step hiện tại
+let stepIndex = -1;   // -1: intro
+let layerIndex = 0;
 
 const steps = [
     makeStep1(),
@@ -32,20 +32,19 @@ const steps = [
 
 // ====== INIT ======
 renderIntro();
+applyButtonHint();
 
 btnPrimary.addEventListener("click", () => advance());
 btnReplay.addEventListener("click", () => replay());
 
+// Enter/Space để tiến (trừ khi đang focus button)
 document.addEventListener("keydown", (e) => {
-    // Enter/Space để mở lớp tiếp theo
-    if (e.key === "Enter" || e.key === " ") {
-        const activeTag = (document.activeElement && document.activeElement.tagName) || "";
-        // tránh can thiệp khi đang focus vào button (space/enter đã là click)
-        if (activeTag !== "BUTTON") {
-            e.preventDefault();
-            advance();
-        }
-    }
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const activeTag = (document.activeElement && document.activeElement.tagName) || "";
+    if (activeTag === "BUTTON") return;
+
+    e.preventDefault();
+    advance();
 });
 
 // ====== CORE: advance reveal ======
@@ -60,14 +59,14 @@ function advance() {
 
     const step = steps[stepIndex];
 
-    // nếu còn lớp => reveal thêm
+    // reveal thêm lớp trong cùng bước
     if (layerIndex < step.layers.length - 1) {
         layerIndex++;
         renderStep();
         return;
     }
 
-    // hết lớp => chuyển step tiếp
+    // chuyển bước
     if (stepIndex < steps.length - 1) {
         step.onExit?.();
         stepIndex++;
@@ -76,51 +75,45 @@ function advance() {
         return;
     }
 
-    // đang ở step cuối => nothing (hoặc confetti lại)
+    // cuối cùng: chỉ hiệu ứng (không text nhắc)
     burstConfetti();
 }
 
 function replay() {
     try { bgm.pause(); bgm.currentTime = 0; } catch {}
     clearFx();
+
     btnReplay.hidden = true;
     btnPrimary.hidden = false;
     btnPrimary.textContent = "Bắt đầu";
+
     stepIndex = -1;
     layerIndex = 0;
+
     renderIntro();
+    applyButtonHint();
 }
 
 // ====== RENDER ======
 function renderIntro() {
-    setProgress(0, "", 0);
+    setProgress(0, "", 0, 0);
     stage.innerHTML = `
     <div class="fade-in">
-      <h2>Chuẩn bị mở bất ngờ</h2>
+      <h2>Chuẩn bị</h2>
       <p class="note">
-        Mỗi “Bước” sẽ có nhiều “Lớp”. Mỗi lần bấm là lộ thêm một lớp nội dung.
-        Bạn cũng có thể nhấn Enter/Space.
+        Một trang nhỏ. Nội dung sẽ mở dần theo từng lớp.
       </p>
-      <div class="pillRow">
-        <div class="pill">Bước 1: Lời chúc</div>
-        <div class="pill">Bước 2: Ảnh</div>
-        <div class="pill">Bước 3: Nhạc</div>
-        <div class="pill">Bước 4: Video</div>
-        <div class="pill">Bước 5: Thông điệp cuối</div>
-      </div>
     </div>
   `;
-    btnPrimary.textContent = "Bắt đầu";
 }
 
 function renderStep() {
     const step = steps[stepIndex];
     const stepNo = stepIndex + 1;
 
-    // progress theo step
     setProgress(stepNo, step.title, layerIndex + 1, step.layers.length);
 
-    // render: giữ các lớp đã lộ (0..layerIndex)
+    // render các lớp đã lộ
     const html = step.layers
         .slice(0, layerIndex + 1)
         .map((layerFn, i) => layerFn({ stepNo, layerNo: i + 1 }))
@@ -130,33 +123,26 @@ function renderStep() {
     <div class="fade-in">
       <h2>${escapeHtml(step.title)}</h2>
       ${html}
-      <p class="note">
-        ${layerIndex < step.layers.length - 1
-        ? "Bấm để mở lớp tiếp theo…"
-        : (stepIndex < steps.length - 1 ? "Bấm để chuyển sang bước tiếp theo…" : "Hết rồi. Bấm để “mưa pháo giấy” lại.")}
-      </p>
     </div>
   `;
 
-    // update button label
-    if (stepIndex === steps.length - 1 && layerIndex === step.layers.length - 1) {
+    // label button (không có lời nhắc)
+    const isLastLayer = layerIndex === step.layers.length - 1;
+    const isLastStep = stepIndex === steps.length - 1;
+
+    if (isLastStep && isLastLayer) {
         btnPrimary.textContent = "Pháo giấy";
         btnReplay.hidden = false;
     } else {
-        btnPrimary.textContent =
-            layerIndex < step.layers.length - 1 ? "Mở tiếp" : "Sang bước";
+        btnPrimary.textContent = isLastLayer ? "Tiếp" : "Mở";
     }
 
-    // hook khi vào step/layer
     step.onEnter?.({ layerIndex, stepIndex });
-
-    // hook theo layer (sau khi DOM có)
     step.onLayerEnter?.(layerIndex);
 
-    // Nếu step muốn tự động ẩn button Primary ở một số layer thì có thể làm trong onLayerEnter
+    applyButtonHint();
 }
 
-// ====== PROGRESS UI ======
 function setProgress(stepNo, stepTitle, layerNo = 0, layerTotal = 0) {
     const totalSteps = steps.length;
     progressText.textContent = `Bước ${stepNo}/${totalSteps}${stepTitle ? ` — ${stepTitle}` : ""}`;
@@ -169,25 +155,41 @@ function setProgress(stepNo, stepTitle, layerNo = 0, layerTotal = 0) {
     }
 }
 
-// ====== STEPS DEFINITIONS (Layered reveal) ======
+function applyButtonHint() {
+    btnPrimary.classList.remove("hint");
+
+    // pulse nhẹ khi còn nội dung để tiến
+    if (stepIndex === -1) {
+        btnPrimary.classList.add("hint");
+        return;
+    }
+
+    const step = steps[stepIndex];
+    const canAdvance =
+        (layerIndex < step.layers.length - 1) ||
+        (stepIndex < steps.length - 1);
+
+    if (canAdvance) btnPrimary.classList.add("hint");
+}
+
+// ====== STEPS (Layered) ======
 function makeStep1() {
     return {
-        title: "Bước 1: Lời chúc mở dần",
+        title: "Lời chúc đầu tiên",
         layers: [
             () => `
         <div class="note fade-in">
-          Có một phong bì nhỏ gửi tới <strong>${escapeHtml(personName)}</strong>…
+          Gửi tới <strong>${escapeHtml(personName)}</strong>.
         </div>
       `,
             () => `
         <div class="note fade-in">
-          Chúc bạn sinh nhật thật vui. Hôm nay là ngày bạn xứng đáng được ưu tiên nhất.
+          Chúc em gái sinh nhật thật vui, nhẹ nhàng, và đúng theo cách em muốn.
         </div>
       `,
             () => `
         <div class="note fade-in">
-          Mình chuẩn bị vài điều nhỏ: ảnh, nhạc, video và một thông điệp cuối.
-          Mỗi lần bấm là mở thêm một lớp.
+          Anh làm cái web nho nhỏ coi như lời chúc sinh nhật
         </div>
       `
         ]
@@ -196,28 +198,32 @@ function makeStep1() {
 
 function makeStep2() {
     return {
-        title: "Bước 2: Ảnh lộ dần theo lớp",
+        title: "Những bức ảnh anh nghĩ là đẹp",
         layers: [
             () => `
         <div class="note fade-in">
-          Trước khi xem ảnh… đoán thử: hôm nay bạn muốn nhận điều gì nhất?
+          Anh cố tìm ảnh cười nhưng mà ít nguồn quá
         </div>
       `,
             () => `
         <div class="note fade-in">
-          Gợi ý: có 2 tấm ảnh. Mỗi tấm đi kèm một caption nhỏ.
+          nên là anh chọn 2 cái ảnh này(toàn trên locket)
         </div>
       `,
             () => `
         <div class="fade-in">
           <div class="grid2">
             <figure>
-              <img class="photo" src="${ASSETS.photos[0]}" alt="Photo 1" />
-              <figcaption class="note" style="margin-top:10px;">Caption 1: Khoảnh khắc này đáng nhớ vì bạn đã cười rất thật.</figcaption>
+              <img class="photo" src="assets/IMG_7052.jpg" alt="Photo 1" />
+              <figcaption class="note" style="margin-top:10px;">
+                Tấm ảnh cười duy nhất
+              </figcaption>
             </figure>
             <figure>
-              <img class="photo" src="${ASSETS.photos[1]}" alt="Photo 2" />
-              <figcaption class="note" style="margin-top:10px;">Caption 2: Một ngày bình thường nhưng có bạn thì thành đặc biệt.</figcaption>
+              <img class="photo" src="/assets/IMG_7053.jpg" alt="Photo 2" />
+              <figcaption class="note" style="margin-top:10px;">
+                Sinh nhật nên được đội vương miện
+              </figcaption>
             </figure>
           </div>
         </div>
@@ -228,32 +234,26 @@ function makeStep2() {
 
 function makeStep3() {
     return {
-        title: "Bước 3: Nhạc + hiệu ứng",
-        onEnter: () => {},
+        title: "Làm tí music",
         onLayerEnter: (idx) => {
-            // Ở lớp 3 (index 2) mới bật nút play để người dùng chủ động
             if (idx === 2) wireMusicControls();
         },
         layers: [
             () => `
         <div class="note fade-in">
-          Giờ thêm một chút không khí: nhạc nền.
+          Biết em fan Jennie
         </div>
       `,
             () => `
         <div class="note fade-in">
-          Lưu ý: trình duyệt thường yêu cầu tương tác để phát nhạc.
-          Ở lớp tiếp theo bạn sẽ có nút bật nhạc.
+          Nên tuổi mới hãy "like Jennie" nhé
         </div>
       `,
             () => `
         <div class="glow fade-in" id="musicPanel">
-          <p class="note">
-            Bấm “Bật nhạc” để phát. Nếu không muốn, bấm “Bỏ qua”.
-          </p>
           <div style="display:flex; gap:10px; justify-content:center;">
             <button class="btn primary" id="btnPlayMusic">Bật nhạc</button>
-            <button class="btn" id="btnSkipMusic">Bỏ qua</button>
+            <button class="btn" id="btnSkipMusic">Tắt</button>
           </div>
         </div>
       `
@@ -283,21 +283,23 @@ function wireMusicControls() {
     btnSkip.addEventListener("click", () => {
         try { bgm.pause(); bgm.currentTime = 0; } catch {}
         panel.classList.remove("playing");
+        btnPlay.disabled = false;
+        btnPlay.textContent = "Bật nhạc";
     });
 }
 
 function makeStep4() {
     return {
-        title: "Bước 4: Video mở theo lớp",
+        title: "Limited",
         layers: [
             () => `
         <div class="note fade-in">
-          Tiếp theo là một đoạn video. Nhưng mình sẽ “bật mí” từ từ.
+          Không biết chèn gì nên cho một thứ duy nhất anh có mà không ai có
         </div>
       `,
             () => `
         <div class="note fade-in">
-          Mẹo: nếu video là lời chúc tự quay hoặc tổng hợp ảnh, cảm xúc sẽ mạnh hơn rất nhiều.
+          Xem nhé
         </div>
       `,
             () => `
@@ -315,17 +317,15 @@ function makeStep4() {
 
 function makeStep5() {
     return {
-        title: "Bước 5: Thông điệp cuối (typing + confetti)",
+        title: "Bước 5: Kết",
         onLayerEnter: (idx) => {
-            // lớp 2: typing
             if (idx === 1) startTyping();
-            // lớp 3: confetti
             if (idx === 2) burstConfetti();
         },
         layers: [
             () => `
         <div class="note fade-in">
-          Trước khi kết thúc… có một điều mình muốn nói thật chậm.
+          Trước khi kết thúc.
         </div>
       `,
             () => `
@@ -335,8 +335,8 @@ function makeStep5() {
       `,
             () => `
         <div class="note fade-in">
-          <strong>Happy Birthday, ${escapeHtml(personName)}!</strong>
-          Chúc bạn luôn được yêu thương, bình an và gặp thật nhiều điều tốt đẹp.
+          <strong>Happy Birthday, ${escapeHtml(personName)}.</strong><br/>
+          Chúc bạn luôn bình an, được yêu thương, và gặp thật nhiều điều tốt đẹp.
         </div>
       `
         ]
@@ -358,7 +358,6 @@ Cảm ơn vì đã xuất hiện và làm cuộc sống trở nên đáng nhớ 
     typeText(el, text, 16);
 }
 
-// ====== typing helper ======
 function typeText(el, text, speedMs = 16) {
     el.textContent = "";
     let i = 0;
@@ -371,7 +370,7 @@ function typeText(el, text, speedMs = 16) {
     tick();
 }
 
-// ====== confetti (canvas) ======
+// ====== CONFETTI (canvas) ======
 function resizeFx() {
     fx.width = window.innerWidth;
     fx.height = window.innerHeight;
@@ -429,7 +428,7 @@ function burstConfetti() {
     tick();
 }
 
-// ====== utils ======
+// ====== UTILS ======
 function escapeHtml(s) {
     return String(s)
         .replaceAll("&", "&amp;")
