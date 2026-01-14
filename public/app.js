@@ -299,7 +299,7 @@ function makeStep4() {
       `,
             () => `
         <div class="note fade-in">
-          Xem nhé
+          Anh đã chọn lọc kĩ lưỡng tìm cái video cười nhiều nhất
         </div>
       `,
             () => `
@@ -317,7 +317,7 @@ function makeStep4() {
 
 function makeStep5() {
     return {
-        title: "Bước 5: Kết",
+        title: "Lời chúc cuối",
         onLayerEnter: (idx) => {
             if (idx === 1) startTyping();
             if (idx === 2) burstConfetti();
@@ -335,8 +335,8 @@ function makeStep5() {
       `,
             () => `
         <div class="note fade-in">
-          <strong>Happy Birthday, ${escapeHtml(personName)}.</strong><br/>
-          Chúc bạn luôn bình an, được yêu thương, và gặp thật nhiều điều tốt đẹp.
+          <strong>Happy Birthday, Như íiiii.</strong><br/>
+          Chúc em luôn xinh gái và thành công
         </div>
       `
         ]
@@ -348,12 +348,10 @@ function startTyping() {
     if (!el) return;
 
     const text =
-        `Chúc mừng sinh nhật, ${personName}.
+        `Chúc mừng sinh nhật, Như íiiii.
 
-Chúc bạn một tuổi mới thật nhiều niềm vui, sức khỏe và những ngày nhẹ nhàng.
-Mong mọi dự định của bạn đều tiến triển tốt, và mỗi ngày đều có lý do để mỉm cười.
-
-Cảm ơn vì đã xuất hiện và làm cuộc sống trở nên đáng nhớ hơn.`;
+Chúc em 8386 mãi đỉnh mãi đỉnh mãi đỉnh
+Cảm ơn vì đã xuất hiện và làm nhà 69 trở lên sinh động hơn.`;
 
     typeText(el, text, 16);
 }
