@@ -348,10 +348,9 @@ function startTyping() {
     if (!el) return;
 
     const text =
-        `Chúc mừng sinh nhật, Như íiiii.
+        `Chúc mừng sinh nhật, Như íiiii. Chúc em tuổi mới luôn giữ được sự bình an trong tâm hồn và nụ cười rạng rỡ trên môi. Cảm ơn em đã xuất hiện và trở thành một phần không thể thiếu trong cuộc đời anh. Có em bên cạnh, mỗi ngày của anh đều trở nên ý nghĩa hơn rất nhiều. Anh yêu em.
 
-Chúc em 8386 mãi đỉnh mãi đỉnh mãi đỉnh
-Cảm ơn vì đã xuất hiện và làm nhà 69 trở lên sinh động hơn.`;
+`;
 
     typeText(el, text, 16);
 }
